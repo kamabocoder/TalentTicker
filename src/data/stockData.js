@@ -2,51 +2,51 @@ export const mag7Stocks = [
   {
     company: 'Google',
     ticker: 'GOOG',
-    stockPrice: 138.45,
+    stockPrice: 255.24,
     glassdoorRating: 4.4,
-    date: '9/21/25'
+    date: '9/21/2025'
   },
   {
     company: 'Amazon', 
     ticker: 'AMZN',
-    stockPrice: 144.78,
+    stockPrice: 231.48,
     glassdoorRating: 3.6,
-    date: '9/21/25'
+    date: '9/21/2025'
   },
   {
     company: 'Apple',
     ticker: 'AAPL', 
-    stockPrice: 225.67,
+    stockPrice: 245.5,
     glassdoorRating: 4.1,
-    date: '9/21/25'
+    date: '9/21/2025'
   },
   {
     company: 'Microsoft',
     ticker: 'MSFT',
-    stockPrice: 428.91,
+    stockPrice: 517.93,
     glassdoorRating: 4.1,
-    date: '9/21/25'
+    date: '9/21/2025'
   },
   {
     company: 'Meta',
     ticker: 'META',
-    stockPrice: 567.23,
+    stockPrice: 778.38,
     glassdoorRating: 3.8,
-    date: '9/21/25'
+    date: '9/21/2025'
   },
   {
     company: 'NVIDIA',
     ticker: 'NVDA',
-    stockPrice: 134.56,
+    stockPrice: 176.6,
     glassdoorRating: 4.6,
-    date: '9/21/25'
+    date: '9/21/2025'
   },
   {
     company: 'Tesla',
     ticker: 'TSLA',
-    stockPrice: 248.89,
+    stockPrice: 426.07,
     glassdoorRating: 3.5,
-    date: '9/21/25'
+    date: '9/21/2025'
   }
 ];
 
