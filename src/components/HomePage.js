@@ -1,14 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mag7Stocks } from '../data/stockData';
+import { fetchAllStocks } from '../services/stockService';
 import './HomePage.css';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const [stocks, setStocks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadStocks = async () => {
+      try {
+        setLoading(true);
+        const stockData = await fetchAllStocks();
+        setStocks(stockData);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to load stocks:', err);
+        setError('Failed to load stock data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStocks();
+  }, []);
 
   const handleStockClick = (ticker) => {
     navigate(`/stock/${ticker}`);
   };
+
+  if (loading) {
+    return (
+      <div className="home-page">
+        <header className="header">
+          <h1>TalentTicker</h1>
+          <p>MAG7 Stocks with Glassdoor Ratings</p>
+        </header>
+        <div className="loading">Loading stock data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="home-page">
+        <header className="header">
+          <h1>TalentTicker</h1>
+          <p>MAG7 Stocks with Glassdoor Ratings</p>
+        </header>
+        <div className="error">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="home-page">
@@ -18,7 +63,7 @@ const HomePage = () => {
       </header>
       
       <div className="stock-list">
-        {mag7Stocks.map((stock) => (
+        {stocks.map((stock) => (
           <div 
             key={stock.ticker} 
             className="stock-card"

@@ -89,6 +89,25 @@
   color: #2c3e50;
 }
 
+.loading, .error {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.1rem;
+}
+
+.loading {
+  color: #7f8c8d;
+}
+
+.error {
+  color: #e74c3c;
+  background: #fdf2f2;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  margin: 20px auto;
+  max-width: 500px;
+}
+
 @media (max-width: 768px) {
   .stock-list {
     grid-template-columns: 1fr;

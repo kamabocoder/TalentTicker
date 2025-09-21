@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { mag7Stocks, generateHistoricalData } from '../data/stockData';
+import { fetchStockByTicker, fetchHistoricalData } from '../services/stockService';
 import './StockDetail.css';
 
 const StockDetail = () => {
@@ -9,34 +9,59 @@ const StockDetail = () => {
   const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState('1M');
   const [chartData, setChartData] = useState([]);
-  
-  const stock = mag7Stocks.find(s => s.ticker === ticker);
+  const [stock, setStock] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   const periods = ['1D', '1M', '3M', '1Y', '5Y', 'ALL'];
   
   useEffect(() => {
-    if (stock) {
-      const historicalData = generateHistoricalData(ticker, stock.stockPrice);
-      
-      const periodDays = {
-        '1D': 1,
-        '1M': 30,
-        '3M': 90,
-        '1Y': 365,
-        '5Y': 365 * 5,
-        'ALL': 365 * 5
-      };
-      
-      const filteredData = historicalData.slice(-periodDays[selectedPeriod]);
-      setChartData(filteredData);
-    }
+    const loadStock = async () => {
+      try {
+        setLoading(true);
+        const stockData = await fetchStockByTicker(ticker);
+        setStock(stockData);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to load stock:', err);
+        setError('Stock not found or failed to load data.');
+        setStock(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStock();
+  }, [ticker]);
+  
+  useEffect(() => {
+    const loadChartData = async () => {
+      if (stock) {
+        try {
+          const historicalData = await fetchHistoricalData(ticker, selectedPeriod);
+          setChartData(historicalData);
+        } catch (err) {
+          console.error('Failed to load chart data:', err);
+        }
+      }
+    };
+
+    loadChartData();
   }, [stock, ticker, selectedPeriod]);
   
-  if (!stock) {
+  if (loading) {
     return (
       <div className="stock-detail">
-        <div className="error">Stock not found</div>
-        <button onClick={() => navigate('/')}>Back to Home</button>
+        <div className="loading">Loading stock data...</div>
+      </div>
+    );
+  }
+  
+  if (error || !stock) {
+    return (
+      <div className="stock-detail">
+        <div className="error">{error || 'Stock not found'}</div>
+        <button className="back-button" onClick={() => navigate('/')}>← Back to Home</button>
       </div>
     );
   }
