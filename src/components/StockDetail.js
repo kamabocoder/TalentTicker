@@ -101,11 +101,11 @@ const StockDetail = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="date" 
-                tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                tickFormatter={(value) => value}
               />
               <YAxis domain={['dataMin - 10', 'dataMax + 10']} />
               <Tooltip 
-                labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                labelFormatter={(value) => value}
                 formatter={(value) => [`$${value}`, 'Stock Price']}
               />
               <Legend />
@@ -127,11 +127,11 @@ const StockDetail = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="date" 
-                tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                tickFormatter={(value) => value}
               />
               <YAxis domain={[1, 5]} />
               <Tooltip 
-                labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                labelFormatter={(value) => value}
                 formatter={(value) => [`${value}⭐`, 'Glassdoor Rating']}
               />
               <Legend />

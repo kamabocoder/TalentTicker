@@ -17,18 +17,34 @@ export const fetchAllStocks = async () => {
       throw companiesError;
     }
 
-    // Then fetch stocks and ratings separately
+    // Get the most recent date from stocks table
+    const { data: latestStock, error: latestError } = await supabase
+      .from('stocks')
+      .select('date')
+      .order('date', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (latestError) {
+      console.error('Error getting latest date:', latestError);
+      throw latestError;
+    }
+
+    const latestDate = latestStock.date;
+    console.log('Using latest date:', latestDate);
+
+    // Then fetch stocks and ratings for the latest date
     const { data: stocks, error: stocksError } = await supabase
       .from('stocks')
       .select('*')
-      .eq('date', '2025-09-21');
-      
+      .eq('date', latestDate);
+
     console.log('Stocks query result:', { stocks, stocksError });
 
     const { data: ratings, error: ratingsError } = await supabase
       .from('ratings')
       .select('*')
-      .eq('date', '2025-09-21');
+      .eq('date', latestDate);
       
     console.log('Ratings query result:', { ratings, ratingsError });
 
@@ -45,6 +61,8 @@ export const fetchAllStocks = async () => {
         ticker: stock?.stockticker || '',
         stockPrice: parseFloat(stock?.stockprice || 0),
         glassdoorRating: parseFloat(rating?.rating || 0),
+        ceoRating: parseFloat(rating?.ceorating || 0),
+        reviewCount: parseInt(rating?.reviewcount || 0),
         date: stock?.date || '2025-09-21'
       };
     });
@@ -60,17 +78,32 @@ export const fetchAllStocks = async () => {
 // Fetch individual stock data by ticker
 export const fetchStockByTicker = async (ticker) => {
   try {
+    // Get the most recent date first
+    const { data: latestStock, error: latestError } = await supabase
+      .from('stocks')
+      .select('date')
+      .order('date', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (latestError) {
+      console.error('Error getting latest date:', latestError);
+      throw latestError;
+    }
+
+    const latestDate = latestStock.date;
+
     const { data, error } = await supabase
       .from('companies')
       .select(`
         companyid,
         companyname,
         stocks!inner(stockticker, stockprice, date),
-        ratings!inner(rating, date)
+        ratings!inner(rating, ceorating, reviewcount, date)
       `)
       .eq('stocks.stockticker', ticker)
-      .eq('stocks.date', '2025-09-21')
-      .eq('ratings.date', '2025-09-21')
+      .eq('stocks.date', latestDate)
+      .eq('ratings.date', latestDate)
       .single();
 
     if (error) throw error;
@@ -81,7 +114,9 @@ export const fetchStockByTicker = async (ticker) => {
       ticker: data.stocks[0]?.stockticker || '',
       stockPrice: parseFloat(data.stocks[0]?.stockprice || 0),
       glassdoorRating: parseFloat(data.ratings[0]?.rating || 0),
-      date: data.stocks[0]?.date || '2025-09-21'
+      ceoRating: parseFloat(data.ratings[0]?.ceorating || 0),
+      reviewCount: parseInt(data.ratings[0]?.reviewcount || 0),
+      date: data.stocks[0]?.date || latestDate
     };
 
     return transformedData;
@@ -94,43 +129,110 @@ export const fetchStockByTicker = async (ticker) => {
 // Fetch historical data for a specific company (for charts)
 export const fetchHistoricalData = async (ticker, period = '1M') => {
   try {
-    // For now, we'll use the single date we have and generate mock historical data
-    // In the future, this would fetch actual historical data from the database
-    const stock = await fetchStockByTicker(ticker);
-    
-    if (!stock) return [];
+    // Get company ID first
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .select('companyid')
+      .eq('companyname', getCompanyNameByTicker(ticker))
+      .single();
 
-    // Generate mock historical data based on current price
-    const data = [];
-    const periods = {
-      '1D': 1,
-      '1M': 30,
-      '3M': 90,
-      '1Y': 365,
-      '5Y': 365 * 5,
-      'ALL': 365 * 5
-    };
-    
-    const daysBack = periods[period] || 30;
-    
-    for (let i = daysBack; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      
-      // Add some randomness to the price for demo purposes
-      const variation = (Math.random() - 0.5) * 0.1;
-      const price = stock.stockPrice * (1 + variation);
-      
-      data.push({
-        date: date.toISOString().split('T')[0],
-        price: parseFloat(price.toFixed(2)),
-        glassdoorRating: stock.glassdoorRating
-      });
+    if (companyError || !company) {
+      console.error('Company lookup error:', companyError);
+      return [];
     }
-    
-    return data;
+
+    // Calculate date range based on period
+    const endDate = new Date().toISOString().split('T')[0];
+    const startDate = getStartDateForPeriod(period);
+
+    // Fetch actual stock data from database
+    const { data: stockData, error: stockError } = await supabase
+      .from('stocks')
+      .select('stockprice, date')
+      .eq('companyid', company.companyid)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true });
+
+    // Fetch actual ratings data from database
+    const { data: ratingsData, error: ratingsError } = await supabase
+      .from('ratings')
+      .select('rating, date')
+      .eq('companyid', company.companyid)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true });
+
+    if (stockError) {
+      console.error('Stock data fetch error:', stockError);
+      return [];
+    }
+
+    if (ratingsError) {
+      console.error('Ratings data fetch error:', ratingsError);
+      return [];
+    }
+
+    // Combine stock and rating data by date
+    const combinedData = stockData.map(stock => {
+      const rating = ratingsData.find(r => r.date === stock.date);
+      return {
+        date: stock.date,
+        price: parseFloat(stock.stockprice),
+        glassdoorRating: rating ? parseFloat(rating.rating) : null
+      };
+    });
+
+    return combinedData;
   } catch (error) {
     console.error('Error fetching historical data:', error);
     throw error;
   }
+};
+
+// Helper function to get company name by ticker
+const getCompanyNameByTicker = (ticker) => {
+  const tickerMap = {
+    'GOOGL': 'Google',
+    'GOOG': 'Google',
+    'AMZN': 'Amazon',
+    'AAPL': 'Apple',
+    'MSFT': 'Microsoft',
+    'META': 'Meta',
+    'NVDA': 'NVIDIA',
+    'TSLA': 'Tesla'
+  };
+  return tickerMap[ticker] || ticker;
+};
+
+// Helper function to calculate start date based on period
+const getStartDateForPeriod = (period) => {
+  const today = new Date();
+  let startDate = new Date(today);
+
+  switch (period) {
+    case '1D':
+      // For 1D, go back a few days to ensure we catch the data
+      startDate.setDate(today.getDate() - 7);
+      break;
+    case '1M':
+      startDate.setMonth(today.getMonth() - 1);
+      break;
+    case '3M':
+      startDate.setMonth(today.getMonth() - 3);
+      break;
+    case '1Y':
+      startDate.setFullYear(today.getFullYear() - 1);
+      break;
+    case '5Y':
+      startDate.setFullYear(today.getFullYear() - 5);
+      break;
+    case 'ALL':
+      startDate.setFullYear(2020); // Set to a very early date
+      break;
+    default:
+      startDate.setMonth(today.getMonth() - 1);
+  }
+
+  return startDate.toISOString().split('T')[0];
 };
