@@ -1,6 +1,6 @@
 # TalentTicker
 
-TalentTicker is an application designed to track stock prices and Glassdoor ratings of MAG7 stocks (Microsoft, Apple, Google, Amazon, Meta, Nvidia, and Tesla).
+TalentTicker is an application designed to track stock prices and Glassdoor ratings of MAG7 stocks (Microsoft, Apple, Google, Amazon, Meta, NVIDIA, and Tesla).
 
 ## Overview
 
