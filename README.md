@@ -9,6 +9,10 @@ This app provides real-time tracking and analysis of:
 - Glassdoor employee ratings and reviews
 - Correlation between employee satisfaction and stock performance
 
+## Contributing
+
+This project is open to ideas and contributors! Feel free to open issues or submit pull requests.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
