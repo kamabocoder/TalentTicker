@@ -11,7 +11,7 @@ This app provides real-time tracking and analysis of:
 
 ## Contributing
 
-This project is open to ideas and contributors! Feel free to open issues or submit pull requests.
+This project is open to ideas and contributors! Feel free to open issues or submit pull requests to help improve TalentTicker.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
